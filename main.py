@@ -128,7 +128,7 @@ if __name__ == '__main__':
 
     # train source model
     print("=== Training classifier for source domain ===")
-    src_encoder, src_classifier = train_src(
+    src_encoder, class_classifier, domain_classifier = train_src(
         args, encoder, class_classifier, domain_classifier, src_data_loader, tgt_data_loader, src_data_loader_eval)
 
     # eval target encoder on lambda0.1 set of target dataset
