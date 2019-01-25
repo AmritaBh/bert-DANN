@@ -1,19 +1,77 @@
 import os
 import random
+import numpy as np
 import pandas as pd
 import torch
+import xml.etree.ElementTree as ET
 import torch.backends.cudnn as cudnn
 from torch.utils.data import DataLoader, Dataset
+from pytorch_pretrained_bert import BertTokenizer
 from params import param
 import re
-from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
 
-stop = stopwords.words('english')
+tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
 
-def read_data(file_path_dataset):
-    return pd.read_csv(file_path_dataset, delimiter='\t')
+def XML2Array(neg_path, pos_path):
+    reviews = []
+    negCount = 0
+    posCount = 0
+    labels = []
+    regex = re.compile(r'[\n\r\t+]')
+
+    neg_tree = ET.parse(neg_path)
+    neg_root = neg_tree.getroot()
+    for rev in neg_root.iter('review'):
+        text = regex.sub(" ", rev.text)
+        reviews.append(text)
+        negCount += 1
+    labels.extend(np.zeros(negCount, dtype=int))
+
+    pos_tree = ET.parse(pos_path)
+    pos_root = pos_tree.getroot()
+
+    for rev in pos_root.iter('review'):
+        text = regex.sub(" ", rev.text)
+        reviews.append(text)
+        posCount += 1
+    labels.extend(np.ones(posCount, dtype=int))
+
+    return reviews, labels
+
+
+def UNL2Array(unl_path):
+    reviews = []
+    regex = re.compile(r'[\n\r\t+]')
+
+    unl_tree = ET.parse(unl_path)
+    unl_root = unl_tree.getroot()
+    for rev in unl_root.iter('review'):
+        text = regex.sub(" ", rev.text)
+        reviews.append(text)
+
+    return reviews
+
+
+def blog2Array(path):
+    blog = pd.read_csv(path, delimiter='\t')
+    reviews, labels = blog.reviews.values.tolist(), blog.labels.values.tolist()
+    return reviews, labels
+
+
+def blogUNL2Array(path):
+    blog = pd.read_csv(path, delimiter='\t')
+    reviews = blog.reviews.values.tolist()
+    return reviews
+
+
+def review2seq(reviews):
+    sequences = []
+    for i in range(len(reviews)):
+        tokens = tokenizer.tokenize(reviews[i])
+        sequence = tokenizer.convert_tokens_to_ids(tokens)
+        sequences.append(sequence)
+    return sequences
 
 
 def make_cuda(tensor):
@@ -57,16 +115,6 @@ def save_model(net, filename):
     torch.save(net.state_dict(),
                os.path.join(param.model_root, filename))
     print("save pretrained model to: {}".format(os.path.join(param.model_root, filename)))
-
-
-def clean_text(text):
-    cleaned_text = re.sub(r'[^\w\s]', '', text)
-    tokenized_text = word_tokenize(cleaned_text)
-    tokenized_text = [word for word in tokenized_text if word not in stop]
-    cleaned_text = ''
-    for word in tokenized_text:
-        cleaned_text += word + ' '
-    return cleaned_text[:-1]
 
 
 def get_data_loader(sequences, labels, batch_size, maxlen=None):

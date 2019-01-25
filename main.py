@@ -3,10 +3,11 @@
 from params import param
 from core import train_src, eval_tgt
 from models import BERTEncoder, BERTClassifier, DomainClassifier
-from utils import read_data, get_data_loader, init_model, init_random_seed
-from pytorch_pretrained_bert import BertTokenizer
+from utils import XML2Array, blog2Array, review2seq, \
+    get_data_loader, init_model
+from sklearn.model_selection import train_test_split
+import os
 import argparse
-import numpy as np
 import torch
 
 if __name__ == '__main__':
@@ -46,6 +47,7 @@ if __name__ == '__main__':
     print("=== Argument Setting ===")
     print("src: " + args.src)
     print("tgt: " + args.tgt)
+    print("random_state: " + str(args.random_state))
     print("seqlen: " + str(args.seqlen))
     print("batch_size: " + str(args.batch_size))
     print("domain_weight: " + str(args.domain_weight))
