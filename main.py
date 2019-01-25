@@ -20,6 +20,9 @@ if __name__ == '__main__':
     parser.add_argument('--tgt', type=str, default="dvd", choices=["books", "dvd", "electronics", "kitchen"],
                         help="Specify tgt dataset")
 
+    parser.add_argument('--random_state', type=int, default=42,
+                        help="Specify random state")
+
     parser.add_argument('--seqlen', type=int, default=50,
                         help="Specify maximum sequence length")
 
