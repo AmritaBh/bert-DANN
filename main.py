@@ -54,52 +54,31 @@ if __name__ == '__main__':
     print("eval_step: " + str(args.eval_step))
     print("save_step: " + str(args.save_step))
 
-    # init random seed
-    init_random_seed(param.manual_seed)
-
     # preprocess data
     print("=== Processing datasets ===")
-    src_train = read_data('./data/processed/' + args.src + '/train.txt')
-    src_test = read_data('./data/processed/' + args.src + '/test.txt')
-    tgt_train = read_data('./data/processed/' + args.tgt + '/train.txt')
-    tgt_test = read_data('./data/processed/' + args.tgt + '/test.txt')
+    reviews, labels = XML2Array(os.path.join('data', args.src, 'negative.parsed'),
+                                os.path.join('data', args.src, 'positive.parsed'))
 
-    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+    src_X_train, src_X_test, src_Y_train, src_Y_test = train_test_split(reviews, labels,
+                                                                        test_size=0.2,
+                                                                        random_state=args.random_state)
+    del reviews, labels
 
-    src_train_sequences = []
-    src_test_sequences = []
-    tgt_train_sequences = []
-    tgt_test_sequences = []
-    tgt_sequences = []
+    if args.tgt == 'blog':
+        tgt_X, tgt_Y = blog2Array(os.path.join('data', args.tgt, 'blog.parsed'))
 
-    for i in range(len(src_train.review)):
-        tokenized_text = tokenizer.tokenize(src_train.review[i])
-        indexed_tokens = tokenizer.convert_tokens_to_ids(tokenized_text)
-        src_train_sequences.append(indexed_tokens)
+    else:
+        tgt_X, tgt_Y = XML2Array(os.path.join('data', args.tgt, 'negative.parsed'),
+                                 os.path.join('data', args.tgt, 'positive.parsed'))
 
-    for i in range(len(src_test.review)):
-        tokenized_text = tokenizer.tokenize(src_test.review[i])
-        indexed_tokens = tokenizer.convert_tokens_to_ids(tokenized_text)
-        src_test_sequences.append(indexed_tokens)
-
-    for i in range(len(tgt_train.review)):
-        tokenized_text = tokenizer.tokenize(tgt_train.review[i])
-        indexed_tokens = tokenizer.convert_tokens_to_ids(tokenized_text)
-        tgt_train_sequences.append(indexed_tokens)
-        tgt_sequences.append(indexed_tokens)
-
-    for i in range(len(tgt_test.review)):
-        tokenized_text = tokenizer.tokenize(tgt_test.review[i])
-        indexed_tokens = tokenizer.convert_tokens_to_ids(tokenized_text)
-        tgt_test_sequences.append(indexed_tokens)
-        tgt_sequences.append(indexed_tokens)
+    src_X_train = review2seq(src_X_train)
+    src_X_test = review2seq(src_X_test)
+    tgt_X = review2seq(tgt_X)
 
     # load dataset
-    src_data_loader = get_data_loader(src_train_sequences, src_train.label, args.batch_size, args.seqlen)
-    src_data_loader_eval = get_data_loader(src_test_sequences, src_test.label, args.batch_size, args.seqlen)
-    tgt_data_loader = get_data_loader(tgt_train_sequences, tgt_train.label, args.batch_size, args.seqlen)
-    tgt_data_loader_eval = get_data_loader(tgt_test_sequences, tgt_test.label, args.batch_size, args.seqlen)
-    tgt_data_loader_all = get_data_loader(tgt_sequences, np.concatenate((tgt_train.label, tgt_test.label)), args.batch_size, args.seqlen)
+    src_data_loader = get_data_loader(src_X_train, src_Y_train, args.batch_size, args.seqlen)
+    src_data_loader_eval = get_data_loader(src_X_test, src_Y_test, args.batch_size, args.seqlen)
+    tgt_data_loader = get_data_loader(tgt_X, tgt_Y, args.batch_size, args.seqlen)
 
     # load models
     encoder = BERTEncoder()
@@ -134,4 +113,4 @@ if __name__ == '__main__':
     # eval target encoder on lambda0.1 set of target dataset
     print("=== Evaluating classifier for encoded target domain ===")
     print(">>> DANN adaption <<<")
-    eval_tgt(encoder, class_classifier, tgt_data_loader_all)
+    eval_tgt(encoder, class_classifier, tgt_data_loader)
