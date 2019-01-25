@@ -1,4 +1,4 @@
-"""Main script for ADDA."""
+"""Main script for bert-DANN."""
 
 from params import param
 from core import train_src, eval_tgt
@@ -25,7 +25,7 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', type=int, default=32,
                         help="Specify batch size")
 
-    parser.add_argument('--domain_weight', type=float, default=1.0,
+    parser.add_argument('--domain_weight', type=float, default=0.05,
                         help="Specify domain weight")
 
     parser.add_argument('--num_epochs', type=int, default=5,
@@ -128,7 +128,7 @@ if __name__ == '__main__':
 
     # train source model
     print("=== Training classifier for source domain ===")
-    src_encoder, src_classifier = train_src(
+    src_encoder, class_classifier, domain_classifier = train_src(
         args, encoder, class_classifier, domain_classifier, src_data_loader, tgt_data_loader, src_data_loader_eval)
 
     # eval target encoder on lambda0.1 set of target dataset
