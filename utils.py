@@ -43,8 +43,8 @@ def XML2Array(neg_path, pos_path):
 
 
 def TSV2Array(path):
-    blog = pd.read_csv(path, delimiter='\t')
-    reviews, labels = blog.reviews.values.tolist(), blog.labels.values.tolist()
+    data = pd.read_csv(path, delimiter='\t')
+    reviews, labels = data.reviews.values.tolist(), data.labels.values.tolist()
     return reviews, labels
 
 
