@@ -45,15 +45,15 @@ def train_src(args, encoder, class_classifier, domain_classifier, src_data_loade
             tgt_feat = encoder(tgt_reviews, tgt_mask)
             feat_concat = torch.cat((src_feat, tgt_feat), 0)
             src_preds = class_classifier(src_feat)
-            domain_preds = domain_classifier(feat_concat, alpha=args.domain_weight)
+            domain_preds = domain_classifier(feat_concat, alpha=args.dom_weight)
 
             # prepare real and fake label
             label_src = make_cuda(torch.ones(src_feat.size(0)))
             label_tgt = make_cuda(torch.zeros(tgt_feat.size(0)))
             label_concat = torch.cat((label_src, label_tgt), 0).long()
-            class_loss = criterion(src_preds, src_labels)
-            domain_loss = criterion(domain_preds, label_concat)
-            loss = class_loss + domain_loss
+            loss_cls = criterion(src_preds, src_labels)
+            loss_dom = criterion(domain_preds, label_concat)
+            loss = loss_cls + loss_dom
 
             # optimize source classifier
             loss.backward()
@@ -61,13 +61,13 @@ def train_src(args, encoder, class_classifier, domain_classifier, src_data_loade
 
             # print step info
             if (step + 1) % args.log_step == 0:
-                print("Epoch [%.3d/%.3d] Step [%.2d/%.2d]: class_loss=%.4f domain_loss=%.4f"
+                print("Epoch [%.2d/%.2d] Step [%.3d/%.3d]: cls_loss=%.4f dom_loss=%.4f"
                       % (epoch + 1,
                          args.num_epochs,
                          step + 1,
                          len(src_data_loader),
-                         class_loss.item(),
-                         domain_loss.item()))
+                         loss_cls.item(),
+                         loss_dom.item()))
 
         # eval model on lambda0.1 set
         if (epoch + 1) % args.eval_step == 0:
@@ -78,13 +78,13 @@ def train_src(args, encoder, class_classifier, domain_classifier, src_data_loade
         # save model parameters
         if (epoch + 1) % args.save_step == 0:
             save_model(encoder, "DANN-encoder-{}.pt".format(epoch + 1))
-            save_model(class_classifier, "DANN-class-classifier-{}.pt".format(epoch + 1))
-            save_model(domain_classifier, "DANN-domain-classifier-{}.pt".format(epoch + 1))
+            save_model(class_classifier, "DANN-cls-classifier-{}.pt".format(epoch + 1))
+            save_model(domain_classifier, "DANN-dom-classifier-{}.pt".format(epoch + 1))
 
     # # save final model
     save_model(encoder, "DANN-encoder-final.pt")
-    save_model(class_classifier, "DANN-class-classifier-final.pt")
-    save_model(domain_classifier, "DANN-domain-classifier-final.pt")
+    save_model(class_classifier, "DANN-cls-classifier-final.pt")
+    save_model(domain_classifier, "DANN-dom-classifier-final.pt")
 
     return encoder, class_classifier, domain_classifier
 

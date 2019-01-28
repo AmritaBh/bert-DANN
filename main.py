@@ -29,7 +29,7 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', type=int, default=32,
                         help="Specify batch size")
 
-    parser.add_argument('--domain_weight', type=float, default=0.05,
+    parser.add_argument('--dom_weight', type=float, default=0.02,
                         help="Specify domain weight")
 
     parser.add_argument('--num_epochs', type=int, default=5,
@@ -53,7 +53,7 @@ if __name__ == '__main__':
     print("random_state: " + str(args.random_state))
     print("seqlen: " + str(args.seqlen))
     print("batch_size: " + str(args.batch_size))
-    print("domain_weight: " + str(args.domain_weight))
+    print("dom_weight: " + str(args.dom_weight))
     print("num_epochs: " + str(args.num_epochs))
     print("log_step: " + str(args.log_step))
     print("eval_step: " + str(args.eval_step))
@@ -87,22 +87,22 @@ if __name__ == '__main__':
 
     # load models
     encoder = BERTEncoder()
-    class_classifier = BERTClassifier()
-    domain_classifier = DomainClassifier()
+    cls_classifier = BERTClassifier()
+    dom_classifier = DomainClassifier()
 
     if torch.cuda.device_count() > 1:
         encoder = torch.nn.DataParallel(encoder)
-        class_classifier = torch.nn.DataParallel(class_classifier)
-        domain_encoder = torch.nn.DataParallel(domain_classifier)
+        class_classifier = torch.nn.DataParallel(cls_classifier)
+        domain_encoder = torch.nn.DataParallel(dom_classifier)
 
     encoder = init_model(encoder,
                          restore=param.encoder_restore)
-    class_classifier = init_model(class_classifier,
-                                  restore=param.class_classifier_restore)
-    domain_classifier = init_model(domain_classifier,
-                                   restore=param.domain_classifier_restore)
+    cls_classifier = init_model(cls_classifier,
+                                restore=param.cls_classifier_restore)
+    dom_classifier = init_model(dom_classifier,
+                                restore=param.dom_classifier_restore)
 
-    # freeze source encoder params
+    # freeze encoder params
     if torch.cuda.device_count() > 1:
         for params in encoder.module.encoder.embeddings.parameters():
             params.requires_grad = False
@@ -112,10 +112,10 @@ if __name__ == '__main__':
 
     # train source model
     print("=== Training classifier for source domain ===")
-    src_encoder, class_classifier, domain_classifier = train_src(
-        args, encoder, class_classifier, domain_classifier, src_data_loader, tgt_data_loader, src_data_loader_eval)
+    src_encoder, cls_classifier, dom_classifier = train_src(
+        args, encoder, cls_classifier, dom_classifier, src_data_loader, tgt_data_loader, src_data_loader_eval)
 
     # eval target encoder on lambda0.1 set of target dataset
     print("=== Evaluating classifier for encoded target domain ===")
     print(">>> DANN adaption <<<")
-    eval_tgt(encoder, class_classifier, tgt_data_loader)
+    eval_tgt(encoder, cls_classifier, tgt_data_loader)

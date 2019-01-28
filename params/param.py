@@ -6,8 +6,8 @@ process_root = "data/processed"
 
 # params for source dataset
 encoder_restore = "snapshots/DANN-encoder-final.pt"
-class_classifier_restore = "snapshots/DANN-class-classifier-final.pt"
-domain_classifier_restore = "snapshots/DANN-domain-classifier-final.pt"
+cls_classifier_restore = "snapshots/DANN-cls-classifier-final.pt"
+dom_classifier_restore = "snapshots/DANN-dom-classifier-final.pt"
 
 # params for setting up models
 model_root = "snapshots"
